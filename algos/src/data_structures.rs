@@ -1,4 +1,5 @@
 // my own basic implementation of data structures built on top of Vectors
+
 pub mod queue {
     pub struct Queue<T> {
         items: Vec<T>,
@@ -75,6 +76,49 @@ pub mod stack {
     
         pub fn size(&self) -> &i32 { // retrieve length of queue
             &self.size
+        }
+    }
+}
+
+pub mod graph {
+    struct Vertex<T> {
+        name: String,
+        value: T,
+        in_vertices: Vec<Vertex<T>>,
+        out_vertices: Vec<Vertex<T>>,
+        in_degree: i32,
+        out_degree: i32,
+    }
+
+    impl<T> Vertex<T> {
+        fn new(name: String, value: T) -> Vertex<T> {
+            Vertex::<T> {
+                name,
+                value,
+                in_vertices: Vec::new(),
+                out_vertices: Vec::new(),
+                in_degree: 0,
+                out_degree: 0,
+            }
+        }
+    }
+
+    pub struct Graph<T> {
+        vertices: Vec<Vertex<T>>,
+        size: i32,
+    }
+
+    impl<T> Graph<T> {
+        pub fn new() -> Graph<T> {
+            Graph::<T> {
+                vertices: Vec::new(),
+                size: 0,
+            }
+        }
+
+        pub fn add_vertex(&mut self, name: String, value: T) {
+            let new_vertex = Vertex::new(name, value);
+            self.vertices.push(new_vertex);
         }
     }
 }
