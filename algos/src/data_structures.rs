@@ -1,5 +1,4 @@
 // my own basic implementation of data structures built on top of Vectors
-
 pub mod queue {
     pub struct Queue<T> {
         items: Vec<T>,
@@ -81,19 +80,19 @@ pub mod stack {
 }
 
 pub mod graph {
+    pub use std::collections::HashMap;
+
     struct Vertex<T> {
-        name: String,
         value: T,
-        in_vertices: Vec<Vertex<T>>,
-        out_vertices: Vec<Vertex<T>>,
+        in_vertices: Vec<&String>,
+        out_vertices: Vec<&String>,
         in_degree: i32,
         out_degree: i32,
     }
 
     impl<T> Vertex<T> {
-        fn new(name: String, value: T) -> Vertex<T> {
+        fn new(value: T) -> Vertex<T> {
             Vertex::<T> {
-                name,
                 value,
                 in_vertices: Vec::new(),
                 out_vertices: Vec::new(),
@@ -104,21 +103,43 @@ pub mod graph {
     }
 
     pub struct Graph<T> {
-        vertices: Vec<Vertex<T>>,
+        vertices: HashMap<String, Vertex<T>>,
         size: i32,
     }
 
     impl<T> Graph<T> {
         pub fn new() -> Graph<T> {
             Graph::<T> {
-                vertices: Vec::new(),
+                vertices: HashMap::new(),
                 size: 0,
             }
         }
 
         pub fn add_vertex(&mut self, name: String, value: T) {
-            let new_vertex = Vertex::new(name, value);
-            self.vertices.push(new_vertex);
+            let new_vertex = Vertex::new(value);
+            self.vertices.entry(name).or_insert(new_vertex);
+            self.size += 1;
+        }
+
+        pub fn add_edge(&mut self, from_vertex: String, to_vertex: String) {
+            match self.vertices.get_mut(&from_vertex) {
+                None => (),
+                Some(matched_vertex) => {
+                    matched_vertex.out_vertices.push(&to_vertex);
+                    matched_vertex.out_degree += 1;
+                }
+            }
+            match self.vertices.get_mut(&to_vertex) {
+                None => (),
+                Some(matched_vertex) => {
+                    matched_vertex.in_vertices.push(&from_vertex);
+                    matched_vertex.in_degree += 1;
+                }
+            }
+        }
+
+        pub fn size(&self) -> &i32 {
+            &self.size
         }
     }
 }
