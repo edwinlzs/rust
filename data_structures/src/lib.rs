@@ -1,4 +1,10 @@
-// my own basic implementation of data structures built on top of Vectors
+// my own basic implementation of data structures
+
+// pub trait Summary {
+    // fn size(&self) -> i32;
+// }
+
+// Queue built on top of Vector
 pub mod queue {
   pub struct Queue<T> {
       items: Vec<T>,
@@ -11,6 +17,11 @@ pub mod queue {
               items: Vec::new(),
               size: 0,
           } 
+      }
+
+      // returns size of queue
+      pub fn size(&self) -> i32 {
+        self.size
       }
   
       // add to the back of queue
@@ -35,14 +46,10 @@ pub mod queue {
           }
           else { None }
       }
-  
-      // retrieve length of queue
-      pub fn size(&self) -> &i32 { 
-          &self.size
-      }
   }
 }
 
+// Stack built on top of Vector
 pub mod stack {
   pub struct Stack<T> {
       items: Vec<T>,
@@ -55,6 +62,10 @@ pub mod stack {
               items: Vec::new(),
               size: 0,
           } 
+      }
+
+      pub fn size(&self) -> i32 {
+        self.size
       }
   
       // add to the top of Stack
@@ -79,14 +90,10 @@ pub mod stack {
           }
           else { None }
       }
-  
-      // retrieve length of queue
-      pub fn size(&self) -> &i32 { 
-          &self.size
-      }
   }
 }
 
+// Graph built on top of HashMap and Vectors
 pub mod graph {
   pub use std::collections::HashMap;
 
@@ -94,6 +101,8 @@ pub mod graph {
   // graph and vertices share lifetime 'a
   struct Vertex<'a, T> {
       value: T,
+      // in_vertices: Vec<&'a String>,
+      // out_vertices: Vec<&'a String>,
       in_vertices: Vec<&'a String>,
       out_vertices: Vec<&'a String>,
       in_degree: i32,
@@ -125,6 +134,10 @@ pub mod graph {
           }
       }
 
+      pub fn size(&self) -> i32 {
+        self.size
+      }
+
       // create a new vertex in the graph by giving it a name and value
       pub fn add_vertex(&mut self, name: String, value: T) {
           let new_vertex = Vertex::new(value);
@@ -150,8 +163,21 @@ pub mod graph {
           }
       }
 
-      pub fn size(&self) -> &i32 {
-          &self.size
-      }
+      pub fn delete_edge(&mut self, from_vertex: &'a String, to_vertex: &'a String) {
+      //   match self.vertices.get_mut(from_vertex) {
+      //     None => (), // to introduce error handling here later
+      //     Some(matched_vertex) => {
+      //         matched_vertex.out_vertices.push(&to_vertex);
+      //         matched_vertex.out_degree += 1;
+      //     }
+      //   }
+      //   match self.vertices.get_mut(to_vertex) {
+      //     None => (), // to introduce error handling here later
+      //     Some(matched_vertex) => {
+      //         matched_vertex.in_vertices.push(&from_vertex);
+      //         matched_vertex.in_degree += 1;
+      //     }
+      //   }
+      // }
   }
 }
