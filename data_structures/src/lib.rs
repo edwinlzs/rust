@@ -101,21 +101,21 @@ pub mod stack {
 pub mod graph {
   pub use std::collections::HashMap;
 
-  // graph stores vertices in hashmap indexed by unique names (strings) of the vertices
+  // graph stores vertices in hashmap indexed by unique names of the vertices
   // graph and vertices share lifetime 'a
   struct Vertex<'a, T> {
-      in_vertices: Vec<&'a String>,
-      out_vertices: Vec<&'a String>,
+      // stores edges info as incoming vertices and outgoing vertices
+      in_vertices: HashMap<&'a String, T>,
+      out_vertices: HashMap<&'a String, T>,
       in_degree: i32,
       out_degree: i32,
   }
 
-  impl<'a, T> Vertex<'a, T> {
-    fn new(value: T) -> Vertex<'a, T> {
+  impl<'a, T: Copy> Vertex<'a, T> {
+    fn new() -> Vertex<'a, T> {
       Vertex::<'a, T> {
-          value,
-          in_vertices: Vec::new(),
-          out_vertices: Vec::new(),
+          in_vertices: HashMap::new(),
+          out_vertices: HashMap::new(),
           in_degree: 0,
           out_degree: 0,
       }
@@ -127,7 +127,7 @@ pub mod graph {
     size: i32,
   }
 
-  impl<'a, T> Graph<'a, T> {
+  impl<'a, T: Copy> Graph<'a, T> {
     pub fn new() -> Graph<'a, T> {
       Graph::<'a, T> {
           vertices: HashMap::new(),
@@ -140,32 +140,32 @@ pub mod graph {
     }
 
     // create a new vertex in the graph by giving it a name and value
-    pub fn add_vertex(&mut self, name: String, value: T) {
-      let new_vertex: Vertex<T> = Vertex::new(value);
+    pub fn add_vertex(&mut self, name: String) {
+      let new_vertex: Vertex<T> = Vertex::new();
       self.vertices.entry(name).or_insert(new_vertex);
       self.size += 1;
     }
 
     // add an edge from vertex with name from_vertex_name to vertex with name to_vertex_name
-    pub fn add_edge(&mut self, from_vertex_name: &'a String, to_vertex_name: &'a String) -> Result<(), &str> {
+    pub fn add_edge(&mut self, from: &'a String, to: &'a String, cost: T) -> Result<(), &str> {
 
       // check that both vertices exist
-      if self.vertices.contains_key(from_vertex_name) && self.vertices.contains_key(to_vertex_name) {
+      if self.vertices.contains_key(from) && self.vertices.contains_key(to) {
 
-        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from_vertex_name).unwrap();
-        if from_vertex.out_vertices.contains(&to_vertex_name) {
+        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from).unwrap();
+        if from_vertex.out_vertices.contains_key(to) {
           return Err("from_vertex already contains to_vertex in its outgoing vertices")
         }
         else {
-          from_vertex.out_vertices.push(&to_vertex_name);
+          from_vertex.out_vertices.entry(to).or_insert(cost);
         }
         
-        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to_vertex_name).unwrap();
-        if to_vertex.in_vertices.contains(&from_vertex_name) {
+        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to).unwrap();
+        if to_vertex.in_vertices.contains_key(from) {
           return Err("to_vertex already contains from_vertex in its incoming vertices")
         }
         else {
-          to_vertex.in_vertices.push(&from_vertex_name);
+          to_vertex.in_vertices.entry(from).or_insert(cost);
         } 
       }
       else {
@@ -175,27 +175,25 @@ pub mod graph {
     }
 
     // delete an edge from vertex with name from_vertex_name to vertex with name to_vertex_name
-    pub fn delete_edge(&mut self, from_vertex_name: &'a String, to_vertex_name: &'a String) -> Result<(), &str> {
+    pub fn delete_edge(&mut self, from: &'a String, to: &'a String) -> Result<(), &str> {
 
       // check that both vertices exist
-      if self.vertices.contains_key(from_vertex_name) && self.vertices.contains_key(to_vertex_name) {
+      if self.vertices.contains_key(from) && self.vertices.contains_key(to) {
 
-        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from_vertex_name).unwrap();
-        if from_vertex.out_vertices.contains(&to_vertex_name) {
-          let outgoing_index = from_vertex.out_vertices.iter().position(|&x| &x == &to_vertex_name).unwrap();
-          from_vertex.out_vertices.remove(outgoing_index);
+        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from).unwrap();
+        if from_vertex.out_vertices.contains_key(&to) {
+          from_vertex.out_vertices.remove(&to);
         }
         else {
-          return Err("from_vertex does not contain to_vertex_name in its outgoing vertices")
+          return Err("from_vertex does not contain to_vertex in its outgoing vertices")
         }
 
-        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to_vertex_name).unwrap();
-        if to_vertex.out_vertices.contains(&from_vertex_name) {
-          let incoming_index = to_vertex.out_vertices.iter().position(|&x| &x == &from_vertex_name).unwrap();
-          to_vertex.out_vertices.remove(incoming_index);
+        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to).unwrap();
+        if to_vertex.out_vertices.contains_key(&from) {
+          to_vertex.out_vertices.remove(&from);
         }
         else {
-          return Err("to_vertex does not contain from_vertex_name in its incoming vertices")
+          return Err("to_vertex does not contain from_vertex in its incoming vertices")
         }
       }
       else {
