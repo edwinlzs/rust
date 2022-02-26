@@ -4,6 +4,10 @@
     // fn size(&self) -> i32;
 // }
 
+// dev mode allow unused code
+#![allow(dead_code)]
+#![allow(unused_variables)]
+
 // Queue built on top of Vector
 pub mod queue {
   pub struct Queue<T> {
@@ -100,9 +104,6 @@ pub mod graph {
   // graph stores vertices in hashmap indexed by unique names (strings) of the vertices
   // graph and vertices share lifetime 'a
   struct Vertex<'a, T> {
-      value: T,
-      // in_vertices: Vec<&'a String>,
-      // out_vertices: Vec<&'a String>,
       in_vertices: Vec<&'a String>,
       out_vertices: Vec<&'a String>,
       in_degree: i32,
@@ -110,74 +111,97 @@ pub mod graph {
   }
 
   impl<'a, T> Vertex<'a, T> {
-      fn new(value: T) -> Vertex<'a, T> {
-          Vertex::<'a, T> {
-              value,
-              in_vertices: Vec::new(),
-              out_vertices: Vec::new(),
-              in_degree: 0,
-              out_degree: 0,
-          }
+    fn new(value: T) -> Vertex<'a, T> {
+      Vertex::<'a, T> {
+          value,
+          in_vertices: Vec::new(),
+          out_vertices: Vec::new(),
+          in_degree: 0,
+          out_degree: 0,
       }
+    }
   }
 
   pub struct Graph<'a, T> {
-      vertices: HashMap<String, Vertex<'a, T>>,
-      size: i32,
+    vertices: HashMap<String, Vertex<'a, T>>,
+    size: i32,
   }
 
   impl<'a, T> Graph<'a, T> {
-      pub fn new() -> Graph<'a, T> {
-          Graph::<'a, T> {
-              vertices: HashMap::new(),
-              size: 0,
-          }
+    pub fn new() -> Graph<'a, T> {
+      Graph::<'a, T> {
+          vertices: HashMap::new(),
+          size: 0,
       }
+    }
 
-      pub fn size(&self) -> i32 {
-        self.size
+    pub fn size(&self) -> i32 {
+      self.size
+    }
+
+    // create a new vertex in the graph by giving it a name and value
+    pub fn add_vertex(&mut self, name: String, value: T) {
+      let new_vertex: Vertex<T> = Vertex::new(value);
+      self.vertices.entry(name).or_insert(new_vertex);
+      self.size += 1;
+    }
+
+    // add an edge from vertex with name from_vertex_name to vertex with name to_vertex_name
+    pub fn add_edge(&mut self, from_vertex_name: &'a String, to_vertex_name: &'a String) -> Result<(), &str> {
+
+      // check that both vertices exist
+      if self.vertices.contains_key(from_vertex_name) && self.vertices.contains_key(to_vertex_name) {
+
+        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from_vertex_name).unwrap();
+        if from_vertex.out_vertices.contains(&to_vertex_name) {
+          return Err("from_vertex already contains to_vertex in its outgoing vertices")
+        }
+        else {
+          from_vertex.out_vertices.push(&to_vertex_name);
+        }
+        
+        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to_vertex_name).unwrap();
+        if to_vertex.in_vertices.contains(&from_vertex_name) {
+          return Err("to_vertex already contains from_vertex in its incoming vertices")
+        }
+        else {
+          to_vertex.in_vertices.push(&from_vertex_name);
+        } 
       }
-
-      // create a new vertex in the graph by giving it a name and value
-      pub fn add_vertex(&mut self, name: String, value: T) {
-          let new_vertex = Vertex::new(value);
-          self.vertices.entry(name).or_insert(new_vertex);
-          self.size += 1;
+      else {
+        return Err("one or both of the vertices do not exist in graph")
       }
+      Ok(())
+    }
 
-      // add an edge from vertex named from_vertex to vertex named to_vertex
-      pub fn add_edge(&mut self, from_vertex: &'a String, to_vertex: &'a String) {
-          match self.vertices.get_mut(from_vertex) {
-              None => (), // to introduce error handling here later
-              Some(matched_vertex) => {
-                  matched_vertex.out_vertices.push(&to_vertex);
-                  matched_vertex.out_degree += 1;
-              }
-          }
-          match self.vertices.get_mut(to_vertex) {
-              None => (), // to introduce error handling here later
-              Some(matched_vertex) => {
-                  matched_vertex.in_vertices.push(&from_vertex);
-                  matched_vertex.in_degree += 1;
-              }
-          }
+    // delete an edge from vertex with name from_vertex_name to vertex with name to_vertex_name
+    pub fn delete_edge(&mut self, from_vertex_name: &'a String, to_vertex_name: &'a String) -> Result<(), &str> {
+
+      // check that both vertices exist
+      if self.vertices.contains_key(from_vertex_name) && self.vertices.contains_key(to_vertex_name) {
+
+        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from_vertex_name).unwrap();
+        if from_vertex.out_vertices.contains(&to_vertex_name) {
+          let outgoing_index = from_vertex.out_vertices.iter().position(|&x| &x == &to_vertex_name).unwrap();
+          from_vertex.out_vertices.remove(outgoing_index);
+        }
+        else {
+          return Err("from_vertex does not contain to_vertex_name in its outgoing vertices")
+        }
+
+        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to_vertex_name).unwrap();
+        if to_vertex.out_vertices.contains(&from_vertex_name) {
+          let incoming_index = to_vertex.out_vertices.iter().position(|&x| &x == &from_vertex_name).unwrap();
+          to_vertex.out_vertices.remove(incoming_index);
+        }
+        else {
+          return Err("to_vertex does not contain from_vertex_name in its incoming vertices")
+        }
       }
-
-      pub fn delete_edge(&mut self, from_vertex: &'a String, to_vertex: &'a String) {
-      //   match self.vertices.get_mut(from_vertex) {
-      //     None => (), // to introduce error handling here later
-      //     Some(matched_vertex) => {
-      //         matched_vertex.out_vertices.push(&to_vertex);
-      //         matched_vertex.out_degree += 1;
-      //     }
-      //   }
-      //   match self.vertices.get_mut(to_vertex) {
-      //     None => (), // to introduce error handling here later
-      //     Some(matched_vertex) => {
-      //         matched_vertex.in_vertices.push(&from_vertex);
-      //         matched_vertex.in_degree += 1;
-      //     }
-      //   }
-      // }
+      else {
+        return Err("one or both of the vertices do not exist in graph")
+      }
+      Ok(())
+    }
   }
 }
