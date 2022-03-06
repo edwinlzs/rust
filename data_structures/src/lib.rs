@@ -100,20 +100,21 @@ pub mod stack {
 // Graph built on top of HashMap and Vectors
 pub mod graph {
   pub use std::collections::HashMap;
+  pub use std::fmt::Display;
 
   // graph stores vertices in hashmap indexed by unique names of the vertices
   // graph and vertices share lifetime 'a
-  struct Vertex<'a, T> {
-      // stores edges info as incoming vertices and outgoing vertices
-      in_vertices: HashMap<&'a String, T>,
-      out_vertices: HashMap<&'a String, T>,
+  struct Vertex<'a> {
+      // stores edges info as vertices they are incoming from and vertices they are outgoing to
+      in_vertices: HashMap<&'a String, i32>,
+      out_vertices: HashMap<&'a String, i32>,
       in_degree: i32,
       out_degree: i32,
   }
 
-  impl<'a, T: Copy> Vertex<'a, T> {
-    fn new() -> Vertex<'a, T> {
-      Vertex::<'a, T> {
+  impl<'a> Vertex<'a> {
+    fn new() -> Vertex<'a> {
+      Vertex::<'a> {
           in_vertices: HashMap::new(),
           out_vertices: HashMap::new(),
           in_degree: 0,
@@ -122,14 +123,14 @@ pub mod graph {
     }
   }
 
-  pub struct Graph<'a, T> {
-    vertices: HashMap<String, Vertex<'a, T>>,
+  pub struct Graph<'a> {
+    vertices: HashMap<String, Vertex<'a>>,
     size: i32,
   }
 
-  impl<'a, T: Copy> Graph<'a, T> {
-    pub fn new() -> Graph<'a, T> {
-      Graph::<'a, T> {
+  impl<'a> Graph<'a> {
+    pub fn new() -> Graph<'a> {
+      Graph::<'a> {
           vertices: HashMap::new(),
           size: 0,
       }
@@ -141,18 +142,18 @@ pub mod graph {
 
     // create a new vertex in the graph by giving it a name and value
     pub fn add_vertex(&mut self, name: String) {
-      let new_vertex: Vertex<T> = Vertex::new();
+      let new_vertex: Vertex = Vertex::new();
       self.vertices.entry(name).or_insert(new_vertex);
       self.size += 1;
     }
 
     // add an edge from vertex with name from_vertex_name to vertex with name to_vertex_name
-    pub fn add_edge(&mut self, from: &'a String, to: &'a String, cost: T) -> Result<(), &str> {
+    pub fn add_edge(&mut self, from: &'a String, to: &'a String, cost: i32) -> Result<(), &str> {
 
       // check that both vertices exist
       if self.vertices.contains_key(from) && self.vertices.contains_key(to) {
 
-        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from).unwrap();
+        let from_vertex: &mut Vertex<'a> = self.vertices.get_mut(from).unwrap();
         if from_vertex.out_vertices.contains_key(to) {
           return Err("from_vertex already contains to_vertex in its outgoing vertices")
         }
@@ -160,7 +161,7 @@ pub mod graph {
           from_vertex.out_vertices.entry(to).or_insert(cost);
         }
         
-        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to).unwrap();
+        let to_vertex: &mut Vertex<'a> = self.vertices.get_mut(to).unwrap();
         if to_vertex.in_vertices.contains_key(from) {
           return Err("to_vertex already contains from_vertex in its incoming vertices")
         }
@@ -180,7 +181,7 @@ pub mod graph {
       // check that both vertices exist
       if self.vertices.contains_key(from) && self.vertices.contains_key(to) {
 
-        let from_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(from).unwrap();
+        let from_vertex: &mut Vertex<'a> = self.vertices.get_mut(from).unwrap();
         if from_vertex.out_vertices.contains_key(&to) {
           from_vertex.out_vertices.remove(&to);
         }
@@ -188,7 +189,7 @@ pub mod graph {
           return Err("from_vertex does not contain to_vertex in its outgoing vertices")
         }
 
-        let to_vertex: &mut Vertex<'a, T> = self.vertices.get_mut(to).unwrap();
+        let to_vertex: &mut Vertex<'a> = self.vertices.get_mut(to).unwrap();
         if to_vertex.out_vertices.contains_key(&from) {
           to_vertex.out_vertices.remove(&from);
         }
@@ -201,5 +202,46 @@ pub mod graph {
       }
       Ok(())
     }
+
+    // retrieve all outgoing vertices for a vertex
+    pub fn get_outgoing_edges(&self, vertex: String) -> &HashMap<&'a String, i32> {
+      return &self.vertices.get(&vertex).unwrap().out_vertices;
+    }
+
+    pub fn get_incoming_edges(&self, vertex: String) -> &HashMap<&'a String, i32> {
+      return &self.vertices.get(&vertex).unwrap().out_vertices;
+    }
+
+    pub fn print_graph(&self) {
+      println!("---- Printing Graph");
+      for (name, vertex) in &self.vertices {
+        for (outgoing_vertex_name, cost) in &vertex.out_vertices {
+          println!("{} -> {}: {}", name, outgoing_vertex_name, cost);
+        }
+      }
+      println!("---- Print Complete")
+    }
+  }
+}
+
+#[cfg(tests)]
+mod tests {
+  use super::*;
+
+  #[test]
+  fn test_graph() {
+    // setup graph
+    let mut g: Graph = Graph::new();
+    g.add_vertex(String::from("A"));
+    g.add_vertex(String::from("B"));
+    g.add_vertex(String::from("C"));
+    let from = String::from("A");
+    let to = String::from("B");
+    g.add_edge(&from, &to, 5);
+    let from = String::from("B");
+    let to = String::from("C");
+    g.add_edge(&from, &to, 8);
+    println!("Size of Graph: {}", g.size());
+    g.print_graph();
   }
 }
